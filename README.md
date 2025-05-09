@@ -1,3 +1,7 @@
+This is an edited version to add 
+1 - reading the .mtx from input path.
+2 - addin a script to run itt on the servers.
+
 # Flash-LLM
 Flash-LLM is a large language model (LLM) inference acceleration library for unstructured model pruning. Flash-LLM mainly contains efficient GPU code based on Tensor-Core-accelerated unstructured sparse matrix multiplication calculations, which can effectively accelerate the performance of common matrix calculations in LLM. With Flash-LLM, the pruned LLM models can be deployed onto GPUs with less memory consumption and can be executed more efficiently. Currently, the code has been evaluated on NVIDIA A100 GPUs.
 
