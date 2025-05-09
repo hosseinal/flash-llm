@@ -16,6 +16,8 @@
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
 #include <cusparse_v2.h>
+#include <fstream>
+#include <sstream>
 
 // Performance Benchmark
 #define WARM_UP_ITERATION 100
@@ -115,6 +117,70 @@ init_host_matrices(half* a, half* b, int M_GLOBAL, int K_GLOBAL, int N_GLOBAL, i
     }
     for (int i = 0; i < N_GLOBAL * K_GLOBAL; i++)
         b[i] = __float2half_rn(static_cast<float>((rand() % 5)) / 5 - 0.5f);
+}
+
+void read_mtx_to_dense(half *a, half *b, std::string filename, int &M_GLOBAL, int &K_GLOBAL, int &N_GLOBAL, int &MATRIX_A_PRUNING_PERCENTAGE) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open file: " + filename);
+    }
+
+    std::string line;
+    std::string object, format, field = "real", symmetry = "general";
+
+    // === Parse header ===
+    while (std::getline(file, line)) {
+        if (line[0] == '%') {
+            if (line.find("MatrixMarket") != std::string::npos) {
+                std::istringstream header(line);
+                std::string banner;
+                header >> banner >> object >> format >> field >> symmetry;
+                if (object != "matrix" || format != "coordinate") {
+                    throw std::runtime_error("Only 'matrix coordinate' format is supported.");
+                }
+            }
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    // === Matrix size and NNZ ===
+    int rows, cols, nnz;
+    std::istringstream size_line(line);
+    size_line >> rows >> cols >> nnz;
+
+    a = (half*)malloc(sizeof(half) * rows * cols);
+
+    // === Read entries ===
+    int r, c;
+    double val;
+    for (int i = 0; i < nnz; ++i) {
+        file >> r >> c;
+        if (field == "pattern") {
+            val = 1.0;
+        } else {
+            file >> val;
+        }
+
+        // dense[r - 1][c - 1] = val;  // 1-based to 0-based
+        a[(r-1) * cols + c-1] = __float2half_rn(static_cast<float>(val));
+        // Handle symmetry
+        if (symmetry == "symmetric" && r != c) {
+            a[(c-1) * cols + r-1] = __float2half_rn(static_cast<float>(val));
+        } else if (symmetry == "skew-symmetric" && r != c) {
+            a[(c-1) * cols + r-1] = __float2half_rn(static_cast<float>(-val));
+        }
+    }
+
+    
+    b = (half*)malloc(sizeof(half) * rows * N_GLOBAL);
+    for (int i = 0; i < rows * N_GLOBAL; i++)
+        b[i] = __float2half_rn(static_cast<float>((rand() % 5)) / 5 - 0.5f);
+
+    M_GLOBAL = rows;
+    K_GLOBAL = cols;
+    MATRIX_A_PRUNING_PERCENTAGE = nnz / rows * cols;
 }
 
 double ComputeTotalError(half* CuBlas, half* Other, int m, int n)
