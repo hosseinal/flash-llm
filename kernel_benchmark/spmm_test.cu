@@ -15,7 +15,6 @@
 #define USE_FLASH_LLM
 #define USE_SPUTNIK
 #define USE_CUSPARSE
-#define USE_SPARTA
 
 #include "./spmm_test_utils.h"
 #include <assert.h>

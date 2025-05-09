@@ -42,9 +42,6 @@ INCLUDES  += -I${SPMM_PATH}/build
 LIBRARIES += -L${SPMM_PATH}/build -lSpMM_API
 endif
 
-ifneq ($(USE_CUSPARSELT),)
-LIBRARIES += -lcusparseLt
-endif
 ################################################################################
 
 # Gencode arguments
