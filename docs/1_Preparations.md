@@ -14,7 +14,7 @@ nvcr.io/nvidia/pytorch:22.07-py3 bash
 #### 2. Submodule Configuration
 
 ```sh
-git clone https://github.com/AlibabaResearch/flash-llm.git
+git clone https://github.com/hosseinal/flash-llm.git
 cd Flash-LLM
 git submodule update --init --recursive
 source Init_FlashLLM.sh
