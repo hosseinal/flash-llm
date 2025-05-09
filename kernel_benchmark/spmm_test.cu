@@ -11,10 +11,10 @@
  * limitations under the License.
  ***************************************************************************/
 
-#define USE_CUBLAS
-#define USE_FLASH_LLM
-#define USE_SPUTNIK
-#define USE_CUSPARSE
+ #define USE_CUBLAS
+ #define USE_FLASH_LLM
+ #define USE_SPUTNIK
+ #define USE_CUSPARSE
 
 #include "./spmm_test_utils.h"
 #include <assert.h>
@@ -42,16 +42,30 @@
 // ITERATION wrongly used in SPMM
 
 int main(int argc, char** argv)
-{
-    if (argc != 6) {
-        printf("Wrong Inputs! Correct input format: ./spmm_test M K N Sparsity SplitK\n");
+{   
+    int M_GLOBAL                    = 64;
+    int K_GLOBAL                    = 64;
+    int N_GLOBAL                    = 64;
+    int MATRIX_A_PRUNING_PERCENTAGE = 70;
+    int SPLIT_K                     = 8;
+    std::string file_path = "";
+
+    if (argc != 2 && argc != 6){
+        printf("Wrong Inputs! Correct input format: ./spmm_test M K N Sparsity SplitK or ./spmm_test path N\n");
         return;
     }
-    int M_GLOBAL                    = atoi(argv[1]);
-    int K_GLOBAL                    = atoi(argv[2]);
-    int N_GLOBAL                    = atoi(argv[3]);
-    int MATRIX_A_PRUNING_PERCENTAGE = atoi(argv[4]);
-    int SPLIT_K                     = atoi(argv[5]);
+    if (argc == 2){
+        file_path = argv[1];
+        N_GLOBAL = atoi(argv[2]);
+    }    
+    if (argc == 6) {
+        M_GLOBAL                    = atoi(argv[1]);
+        K_GLOBAL                    = atoi(argv[2]);
+        N_GLOBAL                    = atoi(argv[3]);
+        MATRIX_A_PRUNING_PERCENTAGE = atoi(argv[4]);
+        SPLIT_K                     = atoi(argv[5]);
+    }
+    
     //
     // printf("M: %d N: %d K: %d\n", M_GLOBAL, N_GLOBAL, K_GLOBAL);
     //
@@ -69,14 +83,30 @@ int main(int argc, char** argv)
     half* A            = NULL;
     half* B            = NULL;
     half* B_Transposed = NULL;
-    //
-    A_h            = (half*)malloc(sizeof(half) * M_GLOBAL * K_GLOBAL);
-    B_h            = (half*)malloc(sizeof(half) * K_GLOBAL * N_GLOBAL);
-    B_Transposed_h = (half*)malloc(sizeof(half) * K_GLOBAL * N_GLOBAL);
-    if (A_h == NULL || B_h == NULL || B_Transposed_h == NULL) {
-        printf("Error in CPU Malloc!\n");
-        exit(-1);
+
+    if (file_path == ""){
+        printf("testing the random generated matrices\n");
+        A_h            = (half*)malloc(sizeof(half) * M_GLOBAL * K_GLOBAL);
+        B_h            = (half*)malloc(sizeof(half) * K_GLOBAL * N_GLOBAL);
+        B_Transposed_h = (half*)malloc(sizeof(half) * K_GLOBAL * N_GLOBAL);
+        if (A_h == NULL || B_h == NULL || B_Transposed_h == NULL) {
+            printf("Error in CPU Malloc!\n");
+            exit(-1);
+        }
+
+        //
+        init_host_matrices(A_h, B_h, M_GLOBAL, K_GLOBAL, N_GLOBAL, MATRIX_A_PRUNING_PERCENTAGE);
+        for (int i = 0; i < K_GLOBAL; i++)
+            for (int j = 0; j < N_GLOBAL; j++)
+                B_Transposed_h[i * N_GLOBAL + j] = B_h[i + j * K_GLOBAL];
+
+    } else {
+       
+       read_mtx_to_dense(A_h, B_h, file_path, M_GLOBAL, K_GLOBAL, N_GLOBAL, MATRIX_A_PRUNING_PERCENTAGE);   
+
     }
+    
+    
     cudaMalloc(reinterpret_cast<void**>(&A), sizeof(half) * M_GLOBAL * K_GLOBAL);
     cudaMalloc(reinterpret_cast<void**>(&B), sizeof(half) * N_GLOBAL * K_GLOBAL);
     cudaMalloc(reinterpret_cast<void**>(&B_Transposed), sizeof(half) * N_GLOBAL * K_GLOBAL);
@@ -85,11 +115,6 @@ int main(int argc, char** argv)
         printf("Error in cudaMalloc!\n");
         exit(-1);
     }
-    //
-    init_host_matrices(A_h, B_h, M_GLOBAL, K_GLOBAL, N_GLOBAL, MATRIX_A_PRUNING_PERCENTAGE);
-    for (int i = 0; i < K_GLOBAL; i++)
-        for (int j = 0; j < N_GLOBAL; j++)
-            B_Transposed_h[i * N_GLOBAL + j] = B_h[i + j * K_GLOBAL];
     //
     // printf("Preparing dense data for GPU...\n");
     cudaMemcpy(A, A_h, sizeof(half) * M_GLOBAL * K_GLOBAL, cudaMemcpyHostToDevice);
