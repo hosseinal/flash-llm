@@ -226,7 +226,7 @@ void PrintMismatch(const char* KernelName,
 
 void PrintPerformance(const char* KernelName, float milliseconds, float tflops, double error)
 {
-    printf("%-10s \t -> \t\t Time/ms: %5.3f \t Performance/TFLOPs: %4.2f \t TotalError: %.2lf\n",
+    printf("%-10s \t -> \t\t Time/ms: %5.6f \t Performance/TFLOPs: %4.2f \t TotalError: %.2lf\n",
            KernelName,
            milliseconds,
            tflops,
