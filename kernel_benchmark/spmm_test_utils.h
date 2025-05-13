@@ -119,7 +119,7 @@ init_host_matrices(half* a, half* b, int M_GLOBAL, int K_GLOBAL, int N_GLOBAL, i
         b[i] = __float2half_rn(static_cast<float>((rand() % 5)) / 5 - 0.5f);
 }
 
-void read_mtx_to_dense(half *a, half *b, std::string filename, int &M_GLOBAL, int &K_GLOBAL, int &N_GLOBAL, int &MATRIX_A_PRUNING_PERCENTAGE) {
+void read_mtx_to_dense(half*& a, half*& b, std::string filename, int &M_GLOBAL, int &K_GLOBAL, int &N_GLOBAL, int &MATRIX_A_PRUNING_PERCENTAGE) {
     std::ifstream file(filename);
     if (!file.is_open()) {
         throw std::runtime_error("Cannot open file: " + filename);
@@ -180,7 +180,11 @@ void read_mtx_to_dense(half *a, half *b, std::string filename, int &M_GLOBAL, in
 
     M_GLOBAL = rows;
     K_GLOBAL = cols;
-    MATRIX_A_PRUNING_PERCENTAGE = nnz / rows * cols;
+    float frow = static_cast<float>(rows);
+    float fcol = static_cast<float>(cols);
+    float fnnz = static_cast<float>(nnz);
+    float fpercentage = 100 - ((fnnz / (frow * fcol)) * 100);
+    MATRIX_A_PRUNING_PERCENTAGE = static_cast<int>(fpercentage);
 }
 
 double ComputeTotalError(half* CuBlas, half* Other, int m, int n)

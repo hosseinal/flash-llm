@@ -23,6 +23,8 @@
 #SBATCH -t 01:00:00
 #SBATCH --mem=50G  # Request 32 GB of memory
 
+BASEPATH=$1
+
 cd ..
 source Init_FlashLLM.sh
 cd kernel_benchmark
@@ -41,8 +43,9 @@ module load cuda/12.2
 M=(21504  7168   28672  7168   27648  9216   36864  9216   36864  12288  49152  12288)
 K=(7168   7168   7168   28672  9216   9216   9216   36864  12288  12288  12288  49152)
 SplitK=(5      7      7      7      2      6      3      6      3      9      9     9)
-N=(8 16 32 64)
-Sparsity=(70 80 90)
+N=(8)
+Sparsity=(70 80 90 95)
+
 
 for BS in ${N[@]}
 do
@@ -52,8 +55,14 @@ do
         #echo "Processing Shape ${i}..."
         for S in ${Sparsity[@]}
         do
-            #echo "Sparsity = $S"
-                ./spmm_test ${M[i]} ${K[i]} ${BS} ${S} ${SplitK[i]} >> result.txt
+            m=${M[i]}
+            k=${K[i]}
+            path="${BASEPATH}/matrix_${m}x${k}_sparsity_${S}.mtx"
+            
+            # ./spmm_test ${M[i]} ${K[i]} ${BS} ${S} ${SplitK[i]} >> result.txt
+
+            ./spmm_test ${path} ${BS} ${SplitK[i]} 
+
         done
     done
 done

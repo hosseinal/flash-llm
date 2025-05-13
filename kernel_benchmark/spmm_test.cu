@@ -50,13 +50,15 @@ int main(int argc, char** argv)
     int SPLIT_K                     = 8;
     std::string file_path = "";
 
-    if (argc != 2 && argc != 6){
+
+    if (argc != 4 && argc != 6){
         printf("Wrong Inputs! Correct input format: ./spmm_test M K N Sparsity SplitK or ./spmm_test path N\n");
         return;
     }
-    if (argc == 2){
+    if (argc == 4){
         file_path = argv[1];
         N_GLOBAL = atoi(argv[2]);
+        SPLIT_K = atoi(argv[3]);
     }    
     if (argc == 6) {
         M_GLOBAL                    = atoi(argv[1]);
@@ -85,7 +87,7 @@ int main(int argc, char** argv)
     half* B_Transposed = NULL;
 
     if (file_path == ""){
-        printf("testing the random generated matrices\n");
+
         A_h            = (half*)malloc(sizeof(half) * M_GLOBAL * K_GLOBAL);
         B_h            = (half*)malloc(sizeof(half) * K_GLOBAL * N_GLOBAL);
         B_Transposed_h = (half*)malloc(sizeof(half) * K_GLOBAL * N_GLOBAL);
@@ -96,16 +98,18 @@ int main(int argc, char** argv)
 
         //
         init_host_matrices(A_h, B_h, M_GLOBAL, K_GLOBAL, N_GLOBAL, MATRIX_A_PRUNING_PERCENTAGE);
-        for (int i = 0; i < K_GLOBAL; i++)
-            for (int j = 0; j < N_GLOBAL; j++)
-                B_Transposed_h[i * N_GLOBAL + j] = B_h[i + j * K_GLOBAL];
 
     } else {
-       
-       read_mtx_to_dense(A_h, B_h, file_path, M_GLOBAL, K_GLOBAL, N_GLOBAL, MATRIX_A_PRUNING_PERCENTAGE);   
-
+       read_mtx_to_dense(A_h, B_h, file_path, M_GLOBAL, K_GLOBAL, N_GLOBAL, MATRIX_A_PRUNING_PERCENTAGE);
+       B_Transposed_h = (half*)malloc(sizeof(half) * K_GLOBAL * N_GLOBAL);
+       if (A_h == NULL || B_h == NULL || B_Transposed_h == NULL) {
+        printf("Error in CPU Malloc!\n");
+        exit(-1);
     }
-    
+    }
+    for (int i = 0; i < K_GLOBAL; i++)
+            for (int j = 0; j < N_GLOBAL; j++)
+                B_Transposed_h[i * N_GLOBAL + j] = B_h[i + j * K_GLOBAL];
     
     cudaMalloc(reinterpret_cast<void**>(&A), sizeof(half) * M_GLOBAL * K_GLOBAL);
     cudaMalloc(reinterpret_cast<void**>(&B), sizeof(half) * N_GLOBAL * K_GLOBAL);
@@ -115,8 +119,8 @@ int main(int argc, char** argv)
         printf("Error in cudaMalloc!\n");
         exit(-1);
     }
-    //
-    // printf("Preparing dense data for GPU...\n");
+//     //
+//     // printf("Preparing dense data for GPU...\n");
     cudaMemcpy(A, A_h, sizeof(half) * M_GLOBAL * K_GLOBAL, cudaMemcpyHostToDevice);
     cudaMemcpy(B, B_h, sizeof(half) * N_GLOBAL * K_GLOBAL, cudaMemcpyHostToDevice);
     cudaMemcpy(B_Transposed, B_Transposed_h, sizeof(half) * N_GLOBAL * K_GLOBAL, cudaMemcpyHostToDevice);
@@ -288,7 +292,6 @@ int main(int argc, char** argv)
     }
     cudaMemcpy(NZWeights_GPU, NZWeights_CPU, sizeof(uint32_t) * NNZ, cudaMemcpyHostToDevice);
     cudaMemcpy(TileOffsets_GPU, TileOffsets_CPU, sizeof(int) * NumOffsets, cudaMemcpyHostToDevice);
-    ;
     free(TileOffsets_CPU);
     free(NZWeights_CPU);
     // printf("Done! Compressed A matrix for GPU kernel: MM_Sparse_TC.\n");
@@ -821,12 +824,16 @@ int main(int argc, char** argv)
     free(D_sparTA_h);
 #endif
     printf("******************************************Problem Size******************************************\n");
-    printf("M: %d N: %d K: %d Pruning Rate: %d SplitK: %d\n",
+    if (file_path == ""){
+        file_path = "random generated";
+    }
+    printf("M: %d N: %d K: %d Pruning Rate: %d SplitK: %d File path : %s\n",
            M_GLOBAL,
            N_GLOBAL,
            K_GLOBAL,
            MATRIX_A_PRUNING_PERCENTAGE,
-           SPLIT_K);
+           SPLIT_K,
+           file_path.c_str());
 // printf("******************************************Performance*******************************************\n");
 #ifdef USE_CUSPARSE
     PrintPerformance("CuSparse_C", milliseconds_CuSparse_ColMajor, tflops_CuSparse_ColMajor, totalError_CuSparse);
@@ -845,6 +852,8 @@ int main(int argc, char** argv)
 #ifdef USE_FLASH_LLM
     PrintPerformance("FlashLLM_v1", milliseconds_SpMM2, tflops_SpMM2, totalError_SpMM2);
     PrintPerformance("FlashLLM_v2", milliseconds_SpMM, tflops_SpMM, totalError_SpMM);
+
+    
 #endif
 
     free(D_cublas_h);
