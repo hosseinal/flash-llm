@@ -20,7 +20,7 @@
 #SBATCH --mail-user=hosseinalbakri3@gmail.com
 #SBATCH --nodes=1
 #SBATCH --output="compressed.%j.%N.out"
-#SBATCH -t 48:00:00
+#SBATCH -t 96:00:00
 #SBATCH --mem=50G  # Request 32 GB of memory
 
 BASEPATH=$1
@@ -44,6 +44,8 @@ module load cuda/12.2
 
 N=(8 16 32 64 128)
 SplitK=(2 3 6 7 9)
+
+rm -rf result_flashllm_dlmc.txt
 
 for B in ${N[@]}
 do
