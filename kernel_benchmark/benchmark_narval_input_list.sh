@@ -54,7 +54,7 @@ do
         while read path; do
          
             echo ${BASEPATH}${path}
-            ./spmm_test ${BASEPATH}${path} ${B} ${S} >> result_output.txt
+            ./spmm_test ${BASEPATH}${path} ${B} ${S} >> result_flashllm_dlmc.txt
 
         done < ${ListPath}
     done
