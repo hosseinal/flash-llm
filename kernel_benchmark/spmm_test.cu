@@ -18,11 +18,15 @@
 
 #include "./spmm_test_utils.h"
 #include <assert.h>
+#ifdef USE_CUBLAS
 #include <cublas_v2.h>
+#endif
 #include <cuda.h>
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
+#ifdef USE_CUSPARSE
 #include <cusparse_v2.h>
+#endif
 #include <stdio.h>
 
 #ifdef USE_FLASH_LLM
@@ -71,8 +75,13 @@ int main(int argc, char** argv)
     //
     // printf("M: %d N: %d K: %d\n", M_GLOBAL, N_GLOBAL, K_GLOBAL);
     //
+#ifdef USE_CUBLAS
     cublasStatus_t cublas_status;
+    cublasHandle_t handle;
+#endif
+#ifdef USE_CUSPARSE
     // cusparseStatus_t  cusparse_status;
+#endif
     // cudaError_t       cuda_error;
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
@@ -127,6 +136,7 @@ int main(int argc, char** argv)
     checkLastCudaError(__LINE__);
     //#ifdef USE_CUBLAS
     /////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef USE_CUBLAS
     printf("Launching CuBlas...\n");
     half* D_cublas = NULL;
     cudaMalloc(reinterpret_cast<void**>(&D_cublas), sizeof(half) * M_GLOBAL * N_GLOBAL);
@@ -135,7 +145,6 @@ int main(int argc, char** argv)
         exit(-1);
     }
     cudaMemset(D_cublas, 0, sizeof(half) * M_GLOBAL * N_GLOBAL);
-    cublasHandle_t handle;
     cublasCreate(&handle);
     cublasSetStream(handle, 0);
 
@@ -262,7 +271,7 @@ int main(int argc, char** argv)
     cudaMemcpy(D_cublas_h, D_cublas, sizeof(half) * M_GLOBAL * N_GLOBAL, cudaMemcpyDeviceToHost);  // Col Major
     cudaFree(D_cublas);
     /////////////////////////////////////////////////////////////////////////////////////////////////
-//#endif
+#endif
 #ifdef USE_FLASH_LLM
     /////////////////////////////////////////////////////////////////////////////////////////////////
     // SpMM_WithSplitK
@@ -800,27 +809,35 @@ int main(int argc, char** argv)
     // printf("Verifying correctness of the computations...\n");
     //
 #ifdef USE_FLASH_LLM
+#ifdef USE_CUBLAS
     double totalError_SpMM  = ComputeTotalError(D_cublas_h, D_SpMM_h, M_GLOBAL, N_GLOBAL);
     double totalError_SpMM2 = ComputeTotalError(D_cublas_h, D_SpMM_h2, M_GLOBAL, N_GLOBAL);
     // PrintMismatch("MySpMM", 10, 0.5, D_cublas_h, D_SpMM_h, M_GLOBAL, N_GLOBAL);
+#endif
     free(D_SpMM_h2);
 #endif
 #ifdef USE_CUSPARSE
+#ifdef USE_CUBLAS
     double totalError_CuSparse   = ComputeTotalError(D_cublas_h, D_CuSparse_h, M_GLOBAL, N_GLOBAL);
     double totalError_CuSparse_2 = ComputeTotalError(D_cublas_h, D_CuSparse_h_2, M_GLOBAL, N_GLOBAL);
     // PrintMismatch("CuSparse",   10, 0.5, D_cublas_h, D_CuSparse_h, M_GLOBAL, N_GLOBAL);
     // PrintMismatch("CuSparse2",  10, 0.5, D_cublas_h, D_CuSparse_h_2, M_GLOBAL, N_GLOBAL);
+#endif
     free(D_CuSparse_h);
     free(D_CuSparse_h_2);
 #endif
 #ifdef USE_SPUTNIK
+#ifdef USE_CUBLAS
     double totalError_Sputnik = ComputeTotalError(D_cublas_h, D_Sputnik_h, M_GLOBAL, N_GLOBAL);
     // PrintMismatch("Sputnik", 10, 0.5, D_cublas_h, D_Sputnik_h, M_GLOBAL, N_GLOBAL);
+#endif
     free(D_Sputnik_h);
 #endif
 #ifdef USE_SPARTA
+#ifdef USE_CUBLAS
     double totalError_sparTA = ComputeTotalError(D_cublas_h, D_sparTA_h, M_GLOBAL, N_GLOBAL);
     // PrintMismatch("sparTA", 10, 0.5, D_cublas_h, D_sparTA_h, M_GLOBAL, N_GLOBAL);
+#endif
     free(D_sparTA_h);
 #endif
     printf("******************************************Problem Size******************************************\n");
@@ -856,7 +873,9 @@ int main(int argc, char** argv)
     
 #endif
 
+#ifdef USE_CUBLAS
     free(D_cublas_h);
+#endif
     free(A_h);
     free(B_h);
     free(B_Transposed_h);
