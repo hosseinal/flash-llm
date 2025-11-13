@@ -29,7 +29,7 @@ ALL_LDFLAGS += $(addprefix -Xlinker ,$(LDFLAGS))
 
 # Common includes and paths for CUDA
 INCLUDES  := -I/usr/local/cuda/include/
-LIBRARIES := -lcublas -lcusparse
+# LIBRARIES := -lcublas -lcusparse
 
 ################################################################################
 
