@@ -26,6 +26,13 @@ module load cuda/12.2
 
 BASEPATH=$1
 MTX_FILE_PATH=$2
+cd ..
+source Init_FlashLLM.sh
+cd build
+make -j
+cd ../kernel_benchmark
+source test_env
+make
 
 rm -rf result_flashllm_large.txt
 
