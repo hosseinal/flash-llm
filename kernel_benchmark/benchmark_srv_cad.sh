@@ -1,27 +1,15 @@
 #!/bin/bash
 
-# Copyright 2023 The FLash-LLM Authors. All rights reserved.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-#SBATCH --gpus-per-node=a100:1
-#SBATCH --cpus-per-task=1
+##################### SLURM (do not change) v  #####################
 #SBATCH --export=ALL
-#SBATCH --job-name="compressed"
-#SBATCH --mail-type=begin  # email me when the job starts
-#SBATCH --mail-type=end    # email me when the job finishes
-#SBATCH --mail-user=hosseinalbakri3@gmail.com
+#SBATCH --job-name="project"
 #SBATCH --nodes=1
-#SBATCH --output="compressed.%j.%N.out"
-#SBATCH -t 10:00:00
-#SBATCH --mem=50G  # Request 32 GB of memory
+#SBATCH --output="project.%j.%N.out"
+#SBATCH -t 01:00:00
+##################### SLURM (do not change) ^  #####################
+
+# Above are SLURM directives for job scheduling on a cluster,
+export SLURM_CONF=/etc/slurm/slurm.conf
 
 BASEPATH=$1
 
