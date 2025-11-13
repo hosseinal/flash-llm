@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 
     if (argc != 4 && argc != 6){
         printf("Wrong Inputs! Correct input format: ./spmm_test M K N Sparsity SplitK or ./spmm_test path N\n");
-        return;
+        return 1;
     }
     if (argc == 4){
         file_path = argv[1];
@@ -86,6 +86,10 @@ int main(int argc, char** argv)
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
+    // Initialize error placeholders so code compiles when cuBLAS baseline is
+    // disabled. These will be assigned only when the cuBLAS baseline runs.
+    double totalError_SpMM = 0.0;
+    double totalError_SpMM2 = 0.0;
     // Host memory
     half* A_h            = NULL;  // row major
     half* B_h            = NULL;  // col major
