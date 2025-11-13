@@ -11,10 +11,10 @@
  * limitations under the License.
  ***************************************************************************/
 
- #define USE_CUBLAS
+//  #define USE_CUBLAS
  #define USE_FLASH_LLM
- #define USE_SPUTNIK
- #define USE_CUSPARSE
+//  #define USE_SPUTNIK
+//  #define USE_CUSPARSE
 
 #include "./spmm_test_utils.h"
 #include <assert.h>
