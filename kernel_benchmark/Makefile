@@ -29,13 +29,13 @@ ALL_LDFLAGS += $(addprefix -Xlinker ,$(LDFLAGS))
 
 # Common includes and paths for CUDA
 INCLUDES  := -I/usr/local/cuda/include/ 
-LIBRARIES := -lcublas 
-LIBRARIES += -lcusparse 
-#
-ifneq ($(SPUTNIK_PATH),)
-	INCLUDES  += -I${SPUTNIK_PATH}
-	LIBRARIES += -L${SPUTNIK_PATH}/build/sputnik/ -lsputnik -lglog 
-endif
+# LIBRARIES := -lcublas 
+# LIBRARIES += -lcusparse 
+# #
+# ifneq ($(SPUTNIK_PATH),)
+# 	INCLUDES  += -I${SPUTNIK_PATH}
+# 	LIBRARIES += -L${SPUTNIK_PATH}/build/sputnik/ -lsputnik -lglog 
+# endif
 #
 ifneq ($(SPMM_PATH),)
 INCLUDES  += -I${SPMM_PATH}/build
