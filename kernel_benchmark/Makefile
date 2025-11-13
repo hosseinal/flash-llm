@@ -28,9 +28,14 @@ ALL_LDFLAGS += $(ALL_CCFLAGS)
 ALL_LDFLAGS += $(addprefix -Xlinker ,$(LDFLAGS))
 
 # Common includes and paths for CUDA
+# Common includes and paths for CUDA
 INCLUDES  := -I/usr/local/cuda/include/ 
-# LIBRARIES := -lcublas 
-# LIBRARIES += -lcusparse 
+# Link against cuBLAS and cuSPARSE by default so symbols like cublasCreate_v2
+# are available at link time. Users can override LIBRARIES when invoking make
+# (for example: `make LIBRARIES="-L/path -lSpMM_API -lcublas -lcusparse"`).
+LIBRARIES := -lcublas -lcusparse
+## LIBRARIES := -lcublas 
+## LIBRARIES += -lcusparse 
 # #
 # ifneq ($(SPUTNIK_PATH),)
 # 	INCLUDES  += -I${SPUTNIK_PATH}
