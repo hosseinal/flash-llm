@@ -12,7 +12,24 @@
 # host compiler
 HOST_COMPILER ?= g++
 CUDA_PATH ?= /usr/local/cuda
-NVCC          := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
+
+# Locate nvcc: prefer $(CUDA_PATH)/bin/nvcc if executable, otherwise fall back to
+# the nvcc found in PATH (if any). This avoids hard-failing on compute nodes
+# where CUDA is provided via modules or a different path.
+NVCC_CANDIDATE := $(CUDA_PATH)/bin/nvcc
+ifeq ($(shell test -x $(NVCC_CANDIDATE) && echo yes),yes)
+	NVCC := $(NVCC_CANDIDATE) -ccbin $(HOST_COMPILER)
+else
+	NVCC_PATH := $(shell command -v nvcc 2>/dev/null)
+	ifneq ($(NVCC_PATH),)
+		NVCC := $(NVCC_PATH) -ccbin $(HOST_COMPILER)
+	else
+		# Fallback to CUDA_PATH even if nvcc missing; make will then error with a
+		# clearer message when trying to execute NVCC. Users should set CUDA_PATH
+		# or load the appropriate module on compute nodes.
+		NVCC := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
+	endif
+endif
 
 # internal flags
 NVCCFLAGS   := -m$(shell getconf LONG_BIT)
@@ -72,3 +89,10 @@ spmm_test: spmm_test.o
 
 clean:
 	rm -f spmm_test spmm_test.o
+
+.PHONY: check-env
+check-env:
+	@echo "NVCC: $(NVCC)"
+	@echo "CUDA_PATH: $(CUDA_PATH)"
+	@echo "HOST_COMPILER: $(HOST_COMPILER)"
+	@echo "INCLUDES: $(INCLUDES)"
